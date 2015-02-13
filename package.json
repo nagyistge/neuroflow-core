@@ -1,0 +1,12 @@
+{
+  "name": "neuroflow-core",
+  "version": "0.0.1",
+  "dependencies": {
+    "args-js": "^0.10.6",
+    "lodash": "^3.2.0",
+    "nooocl": "^0.9.4"
+  },
+  "devDependencies": {
+    "mocha": "^2.1.0"
+  }
+}

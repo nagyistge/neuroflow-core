@@ -24,12 +24,24 @@ function testGradientDescent(isOnline, weightCount, done) {
         builder.args.add('float', 'iterationCount');
     }
 
+    builder.args.add('float', 'gdMomentum');
+    builder.args.add('float', 'gdRate');
+
+    builder.options.gradientDescent = {
+        isOnline: isOnline,
+        smoothing: false,
+        momentum: 0.8,
+        rate: 0.1
+    };
+
     builder.template =
-        'kernel void {{kernelName}}({{argSignatures}}) {\n' +
+        'kernel void {{kernelName}}({{args.signatures}}) {\n' +
         codeTemplates.gradientDescent() +
         '}';
 
     var source = builder.source;
+
+    console.log(source);
 
     assert(_.isString(source) && source.length > 0);
 

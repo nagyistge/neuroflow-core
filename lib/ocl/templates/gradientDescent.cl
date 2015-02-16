@@ -1,18 +1,20 @@
-<% args.forEachArgsByCategories(options.optionsPropertyName.gradientCategories, function(gradients) { %>
-{{ forEachGlobalBegin(args.getArg(options.optionsPropertyName.gradientsSizeArgNamePrefix, gradients.index)) }}
-    <% var weights = args.getArg(options.optionsPropertyName.weightsArgNamePrefix, gradients.index); %>
-    <% var deltas = args.getArg(options.optionsPropertyName.deltasArgNamePrefix, gradients.index); %>
+<% args.forEachArgsByCategories(options.gradientCategories, function(gradients) { %>
+
+{{ forEachGlobalBegin(args.getArg(options.gradientsSizeArgNamePrefix, gradients.index)) }}
+    <% var weights = args.getArg(options.weightsArgNamePrefix, gradients.index); %>
+    <% var deltas = args.getArg(options.deltasArgNamePrefix, gradients.index); %>
     {
-        float update = ({{gradients}}[idx] * {{args.getArg('gdRate', options.optionsPropertyName.gdRateArgIndex)}}){{ options.optionsPropertyName.isOnline ? '' : ' / iterationCount' }};
+        float update = ({{gradients}}[idx] * {{args.getArg('gdRate', options.gdRateArgIndex)}}){{ options.isOnline ? '' : ' / iterationCount' }};
         float lastUpdate = {{deltas}}[idx];
-        <% if (options.optionsPropertyName.smoothing) { %>
-        float smoothV = 1.0f - {{args.getArg('gdMomentum', options.optionsPropertyName.gdMomentumArgIndex)}};
-        update = (lastUpdate * {{args.getArg('gdMomentum', options.optionsPropertyName.gdMomentumArgIndex)}}) + (update * smoothV);
+        <% if (options.smoothing) { %>
+        float smoothV = 1.0f - {{args.getArg('gdMomentum', options.gdMomentumArgIndex)}};
+        update = (lastUpdate * {{args.getArg('gdMomentum', options.gdMomentumArgIndex)}}) + (update * smoothV);
         <% } else { %>
-        update = (lastUpdate * {{args.getArg('gdMomentum', options.optionsPropertyName.gdMomentumArgIndex)}}) + update;
+        update = (lastUpdate * {{args.getArg('gdMomentum', options.gdMomentumArgIndex)}}) + update;
         <% } %>
         {{weights}}[idx] += update;
         {{deltas}}[idx] = update;
     }
 {{ forEachGlobalEnd() }}
+
 <% }); %>

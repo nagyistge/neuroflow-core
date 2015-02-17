@@ -7,7 +7,7 @@
     "lodash": "^3.2.0",
     "mkdirp": "^0.5.0",
     "moment": "^2.9.0",
-    "nooocl": "^0.9.4",
+    "nooocl": "git+https://github.com/unbornchikken/NOOOCL.git#beta-dev",
     "ref": "^1.0.0"
   },
   "devDependencies": {

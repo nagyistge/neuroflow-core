@@ -5,6 +5,7 @@
 
 var nc = require('../');
 var KernelBuilder = nc.ocl.KernelBuilder;
+var KernelLauncher = nc.ocl.KernelLauncher;
 var ArgIndex = nc.ocl.ArgIndex;
 var codeTemplates = nc.ocl.codeTemplates;
 var _ = require('lodash');
@@ -14,6 +15,8 @@ var nooocl = require('nooocl');
 var CLBuffer = nooocl.CLBuffer;
 var ref = require('ref');
 var float = ref.types.float;
+var Bluebird = require('bluebird');
+var async = Bluebird.coroutine;
 
 function createRndBuffer(size) {
     var i, buff = new Buffer(size * float.size);
@@ -27,7 +30,7 @@ function createZeroedBuffer(size) {
     return new Buffer(size * float.size);
 }
 
-function testGradientDescent(isOnline, weightCount, useCache, done) {
+var testGradientDescent = async(function* (isOnline, weightCount, useCache) {
     var i, j, idx;
     var builder = new KernelBuilder('gradientDescent');
     var buffSize = 10;
@@ -78,46 +81,44 @@ function testGradientDescent(isOnline, weightCount, useCache, done) {
 
     assert(_.isString(source) && source.length > 0);
 
-    builder.build(ocl.context, useCache).then(
-        function(launcher) {
-            assert(launcher ? true : false);
+    try {
+        var launcher = yield builder.build(ocl.context, useCache);
+        assert(launcher instanceof KernelLauncher);
 
-            // Set args:
-            if (!isOnline) {
-                builder.setArg('iterationCount', iterationCount);
+        // Set args:
+        if (!isOnline) {
+            launcher.setArg('iterationCount', iterationCount);
+        }
+
+        launcher.setArg('gdMomentum', 1, momentum);
+        launcher.setArg('gdRate', rate);
+
+        var x = 0, d;
+        for (i = 0; i < weightCount; i++) {
+            for (j = 0; j < 2; j++) { // Simulating multiple inputs
+                idx = new ArgIndex(j, i);
+                d = data[x++];
+                launcher.setArg('gradients', idx, d.gradients);
+                launcher.setArg('gradientsSize', idx, buffSize);
+                launcher.setArg('weights', idx, d.weights);
+                launcher.setArg('deltas', idx, d.deltas);
             }
+        }
 
-            builder.setArg('gdMomentum', new ArgIndex(1), momentum);
-            builder.setArg('gdRate', rate);
-
-            var x = 0, d;
-            for (i = 0; i < weightCount; i++) {
-                for (j = 0; j < 2; j++) { // Simulating multiple inputs
-                    idx = new ArgIndex(j, i);
-                    d = data[x++];
-                    builder.setArg('gradients', idx, d.gradients);
-                    builder.setArg('gradientsSize', idx, buffSize);
-                    builder.setArg('weights', idx, d.weights);
-                    builder.setArg('deltas', idx, d.deltas);
-                }
-            }
-
-            // Invoke:
-
-        })
-        .catch(function(e) {
-            console.log(source);
-            throw e;
-        })
-        .nodeify(done);
-}
+        // Invoke:
+    }
+    catch (e) {
+        console.log(source);
+        throw e;
+    }
+});
 
 describe('KernelBuilder and KernelLauncher', function () {
     it('should compute online gradient descent', function (done) {
-        testGradientDescent(true, 2, false, done);
+        testGradientDescent(true, 2, false).nodeify(done);
     });
 
     it('should compute offline gradient descent', function (done) {
-        testGradientDescent(false, 3, true, done);
+        testGradientDescent(false, 3, true).nodeify(done);
     });
 });

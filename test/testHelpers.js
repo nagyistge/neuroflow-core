@@ -1,5 +1,3 @@
-/*jslint node:true,nomen:true,vars:true,plusplus:true,white:true,unparam:true,bitwise:true*/
-/*jshint onevar:true*/
 'use strict';
 
 var nooocl = require('nooocl');

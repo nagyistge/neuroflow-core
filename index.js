@@ -1,5 +1,3 @@
-/*jslint node:true,nomen:true,vars:true,plusplus:true,white:true,unparam:true*/
-/*jshint onevar:true*/
-'use strict';
+"use strict";
 
-module.exports = require('./lib');
+module.exports = require("./lib");

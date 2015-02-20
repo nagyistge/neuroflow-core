@@ -14,40 +14,42 @@ var CLBuffer = nooocl.CLBuffer;
 var ref = require("ref");
 var float = ref.types.float;
 var async = nc.utils.task.async;
+var NDRange = nooocl.NDRange;
 
-function createRndBuffer(size) {
+function createFilledBuffer(size, value) {
     var i, buff = new Buffer(size * float.size);
     for (i = 0; i < size; i++) {
-        float.set(buff, i * float.size, Math.random());
+        float.set(buff, i * float.size, value);
     }
     return buff;
 }
 
 function createZeroedBuffer(size) {
-    return new Buffer(size * float.size);
+    var buff = new Buffer(size * float.size);
+    buff.fill(0);
+    return buff;
 }
 
 var testGradientDescent = async(function* (isOnline, weightCount, useCache) {
-    var i, j, idx;
     var builder = new KernelBuilder("gradientDescent");
-    var buffSize = 10;
+    var gradientsLength = 15;
     var ocl = testHelpers.createOCLStuff();
     var data = [];
     var iterationCount = 10;
     var momentum = 0.8;
-    var rate = 0.1;
+    var rate = 0.01;
 
-    for (i = 0; i < weightCount; i++) {
-        for (j = 0; j < 2; j++) { // Simulating multiple inputs
-            idx = new ArgIndex(j, i);
+    for (let i = 0; i < weightCount; i++) {
+        for (let j = 0; j < 2; j++) { // Simulating multiple inputs
+            let idx = new ArgIndex(j, i);
             builder.args.add("global float*", "gradients", idx, "gradient");
             builder.args.add("uint", "gradientsSize", idx, "size");
             builder.args.add("global float*", "weights", idx, "weight");
             builder.args.add("global float*", "deltas", idx, "delta");
             data.push({
-                gradients: CLBuffer.wrap(ocl.context, createRndBuffer(buffSize)),
-                weights: CLBuffer.wrap(ocl.context, createRndBuffer(buffSize)),
-                deltas: CLBuffer.wrap(ocl.context, createZeroedBuffer(buffSize))
+                gradients: CLBuffer.wrap(ocl.context, createFilledBuffer(gradientsLength, 1.0)),
+                weights: CLBuffer.wrap(ocl.context, createFilledBuffer(gradientsLength, 0.5 + i * 0.1 + j * 0.1)),
+                deltas: CLBuffer.wrap(ocl.context, createZeroedBuffer(gradientsLength))
             });
         }
     }
@@ -90,19 +92,36 @@ var testGradientDescent = async(function* (isOnline, weightCount, useCache) {
         launcher.setArg("gdMomentum", 1, momentum);
         launcher.setArg("gdRate", rate);
 
-        var x = 0, d;
-        for (i = 0; i < weightCount; i++) {
-            for (j = 0; j < 2; j++) { // Simulating multiple inputs
-                idx = new ArgIndex(j, i);
-                d = data[x++];
+        var x = 0;
+        for (let i = 0; i < weightCount; i++) {
+            for (let j = 0; j < 2; j++) { // Simulating multiple inputs
+                let idx = new ArgIndex(j, i);
+                let d = data[x++];
                 launcher.setArg("gradients", idx, d.gradients);
-                launcher.setArg("gradientsSize", idx, buffSize);
+                launcher.setArg("gradientsSize", idx, gradientsLength);
                 launcher.setArg("weights", idx, d.weights);
                 launcher.setArg("deltas", idx, d.deltas);
             }
         }
 
         // Invoke:
+        ocl.queue.enqueueNDRangeKernel(launcher.kernel, new NDRange(gradientsLength * float.size - (gradientsLength/ 4)));
+
+        // Verify:
+        x = 0;
+        for (let i = 0; i < weightCount; i++) {
+            for (let j = 0; j < 2; j++) { // Simulating multiple inputs
+                let d = data[x++];
+                let out = {};
+                yield ocl.queue.waitable().enqueueMapBuffer(d.weights, ocl.host.cl.defs.CL_MAP_READ, 0, gradientsLength * float.size, out).promise;
+                let weights = ref.reinterpret(out.ptr, gradientsLength * float.size, 0);
+                let typedWeights = new Float64Array(gradientsLength);
+                for (let widx = 0; widx < gradientsLength; widx++) {
+                    typedWeights[widx] = float.get(weights, widx * float.size);
+                }
+                console.log(typedWeights);
+            }
+        }
     }
     catch (e) {
         //console.log(source);

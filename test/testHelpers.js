@@ -3,6 +3,7 @@
 var nooocl = require('nooocl');
 var CLContext = nooocl.CLContext;
 var CLHost = nooocl.CLHost;
+var CLCommandQueue = nooocl.CLCommandQueue;
 var assert = require('assert');
 var _ = require('lodash');
 
@@ -21,7 +22,8 @@ var testHelpers = {
         return {
             host: host,
             device: device,
-            context: context
+            context: context,
+            queue: new CLCommandQueue(context, device)
         };
     }
 };

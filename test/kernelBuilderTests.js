@@ -16,26 +16,12 @@ var float = ref.types.float;
 var async = nc.utils.task.async;
 var NDRange = nooocl.NDRange;
 
-function createFilledBuffer(size, value) {
-    var i, buff = new Buffer(size * float.size);
-    for (i = 0; i < size; i++) {
-        float.set(buff, i * float.size, value);
-    }
-    return buff;
-}
-
-function createZeroedBuffer(size) {
-    var buff = new Buffer(size * float.size);
-    buff.fill(0);
-    return buff;
-}
-
 var testGradientDescent = async(function* (isOnline, weightCount, useCache) {
     var builder = new KernelBuilder("gradientDescent");
     var gradientsLength = 15;
     var ocl = testHelpers.createOCLStuff();
     var data = [];
-    var iterationCount = 10;
+    var iterationCount = isOnline ? 1 : 10;
     var momentum = 0.8;
     var rate = 0.01;
 
@@ -46,10 +32,14 @@ var testGradientDescent = async(function* (isOnline, weightCount, useCache) {
             builder.args.add("uint", "gradientsSize", idx, "size");
             builder.args.add("global float*", "weights", idx, "weight");
             builder.args.add("global float*", "deltas", idx, "delta");
+            let gradientValue = Math.random();
+            let weightValue = Math.random();
             data.push({
-                gradients: CLBuffer.wrap(ocl.context, createFilledBuffer(gradientsLength, 1.0)),
-                weights: CLBuffer.wrap(ocl.context, createFilledBuffer(gradientsLength, 0.5 + i * 0.1 + j * 0.1)),
-                deltas: CLBuffer.wrap(ocl.context, createZeroedBuffer(gradientsLength))
+                gradientValue: gradientValue,
+                weightValue: weightValue,
+                gradients: CLBuffer.wrap(ocl.context, testHelpers.createFilledBuffer(float, gradientsLength, gradientValue)),
+                weights: CLBuffer.wrap(ocl.context, testHelpers.createFilledBuffer(float, gradientsLength, weightValue)),
+                deltas: CLBuffer.wrap(ocl.context, testHelpers.createZeroedBuffer(float, gradientsLength))
             });
         }
     }
@@ -105,21 +95,31 @@ var testGradientDescent = async(function* (isOnline, weightCount, useCache) {
         }
 
         // Invoke:
-        ocl.queue.enqueueNDRangeKernel(launcher.kernel, new NDRange(gradientsLength * float.size - (gradientsLength/ 4)));
+        ocl.queue.enqueueNDRangeKernel(launcher.kernel, new NDRange(gradientsLength * float.size - (gradientsLength / 4)));
 
         // Verify:
         x = 0;
         for (let i = 0; i < weightCount; i++) {
             for (let j = 0; j < 2; j++) { // Simulating multiple inputs
-                let d = data[x++];
-                let out = {};
-                yield ocl.queue.waitable().enqueueMapBuffer(d.weights, ocl.host.cl.defs.CL_MAP_READ, 0, gradientsLength * float.size, out).promise;
-                let weights = ref.reinterpret(out.ptr, gradientsLength * float.size, 0);
-                let typedWeights = new Float64Array(gradientsLength);
-                for (let widx = 0; widx < gradientsLength; widx++) {
-                    typedWeights[widx] = float.get(weights, widx * float.size);
+                let dataItem = data[x++];
+                let wOut = {}, dOut = {};
+                ocl.queue.enqueueMapBuffer(dataItem.deltas, ocl.host.cl.defs.CL_MAP_READ, 0, gradientsLength * float.size, dOut);
+                yield ocl.queue.waitable().enqueueMapBuffer(dataItem.weights, ocl.host.cl.defs.CL_MAP_READ, 0, gradientsLength * float.size, wOut).promise;
+                try {
+                    let deltas = ref.reinterpret(dOut.ptr, gradientsLength * float.size, 0);
+                    let weights = ref.reinterpret(wOut.ptr, gradientsLength * float.size, 0);
+
+                    for (let widx = 0; widx < gradientsLength; widx++) {
+                        let w = float.get(weights, widx * float.size);
+                        let d = float.get(deltas, widx * float.size);
+
+                        assert(testHelpers.dEq(w - d, dataItem.weightValue));
+                        assert(testHelpers.dEq((dataItem.gradientValue * rate) / iterationCount, d));
+                    }
                 }
-                console.log(typedWeights);
+                finally {
+                    yield ocl.queue.waitable().enqueueUnmapMemory(dataItem.weights, wOut.ptr).promise;
+                }
             }
         }
     }

@@ -8,7 +8,7 @@ var assert = require('assert');
 var _ = require('lodash');
 
 var testHelpers = {
-    createOCLStuff: function() {
+    createOCLStuff: function () {
         var host = CLHost.createV11();
         assert(_.isObject(host));
         var platforms = host.getPlatforms();
@@ -25,6 +25,21 @@ var testHelpers = {
             context: context,
             queue: new CLCommandQueue(context, device)
         };
+    },
+    createFilledBuffer: function (type, size, value) {
+        var i, buff = new Buffer(size * type.size);
+        for (i = 0; i < size; i++) {
+            type.set(buff, i * type.size, value);
+        }
+        return buff;
+    },
+    createZeroedBuffer: function (type, size) {
+        var buff = new Buffer(size * type.size);
+        buff.fill(0);
+        return buff;
+    },
+    dEq: function (v1, v2) {
+        return Math.abs(v1 - v2) < 0.0001;
     }
 };
 

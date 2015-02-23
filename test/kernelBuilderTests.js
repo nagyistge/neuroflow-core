@@ -17,7 +17,7 @@ var async = nc.utils.task.async;
 var NDRange = nooocl.NDRange;
 
 var testGradientDescent = async(function* (isOnline, weightCount, useCache) {
-    var builder = new KernelBuilder("gradientDescent");
+    var builder = new KernelBuilder("gradientDescent", "double");
     var gradientsLength = 15;
     var ocl = testHelpers.createOCLStuff();
     var data = [];
@@ -28,10 +28,10 @@ var testGradientDescent = async(function* (isOnline, weightCount, useCache) {
     for (let i = 0; i < weightCount; i++) {
         for (let j = 0; j < 2; j++) { // Simulating multiple inputs
             let idx = new ArgIndex(j, i);
-            builder.args.add("global float*", "gradients", idx, "gradient");
+            builder.args.add("global real*", "gradients", idx, "gradient");
             builder.args.add("uint", "gradientsSize", idx, "size");
-            builder.args.add("global float*", "weights", idx, "weight");
-            builder.args.add("global float*", "deltas", idx, "delta");
+            builder.args.add("global real*", "weights", idx, "weight");
+            builder.args.add("global real*", "deltas", idx, "delta");
             let gradientValue = Math.random();
             let weightValue = Math.random();
             data.push({
@@ -45,11 +45,11 @@ var testGradientDescent = async(function* (isOnline, weightCount, useCache) {
     }
 
     if (!isOnline) {
-        builder.args.add("float", "iterationCount");
+        builder.args.add("real", "iterationCount");
     }
 
-    builder.args.add("float", "gdMomentum", new ArgIndex(1));
-    builder.args.add("float", "gdRate");
+    builder.args.add("real", "gdMomentum", new ArgIndex(1));
+    builder.args.add("real", "gdRate");
 
     builder.options.gradientDescent1 = {
         isOnline: isOnline,

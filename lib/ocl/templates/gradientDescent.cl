@@ -4,10 +4,10 @@
     <% var weights = args.getArg(options.weightsArgNamePrefix, gradients.index); %>
     <% var deltas = args.getArg(options.deltasArgNamePrefix, gradients.index); %>
     {
-        float update = ({{gradients}}[idx] * {{args.getArg('gdRate', options.gdRateArgIndex)}}){{ options.isOnline ? '' : ' / iterationCount' }};
-        float lastUpdate = {{deltas}}[idx];
+        real update = ({{gradients}}[idx] * {{args.getArg('gdRate', options.gdRateArgIndex)}}){{ options.isOnline ? '' : ' / iterationCount' }};
+        real lastUpdate = {{deltas}}[idx];
         <% if (options.smoothing) { %>
-        float smoothV = 1.0f - {{args.getArg('gdMomentum', options.gdMomentumArgIndex)}};
+        real smoothV = 1.0f - {{args.getArg('gdMomentum', options.gdMomentumArgIndex)}};
         update = (lastUpdate * {{args.getArg('gdMomentum', options.gdMomentumArgIndex)}}) + (update * smoothV);
         <% } else { %>
         update = (lastUpdate * {{args.getArg('gdMomentum', options.gdMomentumArgIndex)}}) + update;

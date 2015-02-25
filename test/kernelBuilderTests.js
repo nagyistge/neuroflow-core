@@ -1,11 +1,11 @@
 /*global it,describe*/
 "use strict";
 
-var nc = require("../");
-var KernelBuilder = nc.ocl.KernelBuilder;
-var KernelLauncher = nc.ocl.KernelLauncher;
-var ArgIndex = nc.ocl.ArgIndex;
-var codeTemplates = nc.ocl.codeTemplates;
+var ncore = require("../");
+var KernelBuilder = ncore.programs.KernelBuilder;
+var KernelLauncher = ncore.programs.KernelLauncher;
+var ArgIndex = ncore.programs.ArgIndex;
+var codeTemplates = ncore.programs.codeTemplates;
 var _ = require("lodash");
 var assert = require("assert");
 var testHelpers = require("./testHelpers");
@@ -13,7 +13,7 @@ var nooocl = require("nooocl");
 var CLBuffer = nooocl.CLBuffer;
 var ref = require("ref");
 var float = ref.types.float;
-var async = nc.utils.task.async;
+var async = ncore.utils.task.async;
 var NDRange = nooocl.NDRange;
 
 var testGradientDescent = async(function* (isOnline, weightCount, useCache) {

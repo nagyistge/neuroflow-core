@@ -1,0 +1,12 @@
+{
+  "name": "jpeg-articfact-remover",
+  "version": "0.0.1",
+  "dependencies": {
+    "cacheman-memory": "^0.1.2",
+    "lodash": "^3.3.1",
+    "lwip": "git+https://github.com/boogerlad/lwip.git#16c436f332120fef074b2cdf314a4090c0ed2acc",
+    "ref": "^1.0.0",
+    "walk": "^2.3.9",
+    "yargs": "^3.3.1"
+  }
+}

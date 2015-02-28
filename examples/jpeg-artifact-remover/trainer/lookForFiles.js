@@ -19,7 +19,7 @@ LookForFiles.prototype.searchForFiles = task.async(function*() {
         walker.on("file", function(root, fileStat, next) {
             if (path.extname(fileStat.name).toLowerCase() === ".png") {
                 result.push({
-                    root: root,
+                    path: path.join(root, fileStat.name),
                     fileStat: fileStat
                 });
             }

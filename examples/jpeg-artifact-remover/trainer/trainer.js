@@ -33,8 +33,12 @@ Trainer.prototype.begin = function () {
     });
 
     f().catch(function (ex) {
-        console.error("Trainer has been crashed.");
-        console.error(ex.stack);
+        if (ex.name === "TrainerError") {
+            console.error(ex.message);
+        }
+        else {
+            console.error(`Trainer has been crashed. Error:\n${ex.stack}`);
+        }
     });
 
     return true;

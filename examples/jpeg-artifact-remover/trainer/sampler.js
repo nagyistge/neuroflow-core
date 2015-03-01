@@ -24,9 +24,36 @@ Object.defineProperties(Sampler, {
 });
 
 Sampler.prototype.generateFFSample = task.async(function*() {
-    let percent = _.random(1, 100);
+    const quality = _.random(1, 100);
     let image = yield this._getRandomImage();
-    image = yield this._addJpegArtifacts(image, percent);
+    let data = yield this._createSampleData(image, quality);
+    const x = _.random(0, data.width - 1);
+    const y = _.random(0, data.height - 1);
+    const key = `${image.path}_${quality}_${x}_${y}`;
+    let sample = yield Sampler.cache.getAsync(key);
+    if (!sample) {
+        return this._makeFFSample(data, x, y);
+    }
+    return sample;
+});
+
+Sampler.prototype._makeFFSample = function(data, x, y) {
+
+};
+
+Sampler.prototype._createSampleData = task.async(function *(image, quality) {
+    const key = `${image.path}_${quality}`;
+    let data = yield Sampler.cache.getAsync(key);
+    if (!data) {
+        data = {
+            path: image.path,
+            width: image.width(),
+            height: image.height(),
+            originalImage: image,
+            resultImage: yield(lwip.openAsync(yield image.toBufferAsync("jpeg", { quality: quality }), "jpeg"))
+        };
+    }
+    return data;
 });
 
 Sampler.prototype._getRandomImage = task.async(function *() {
@@ -47,7 +74,7 @@ Sampler.prototype._getRandomImage = task.async(function *() {
 
 Sampler.prototype._getImageAt = task.async(function *(index) {
     let file = this.files[index];
-    var image = yield Sampler.cache.getAsync(file.path);
+    let image = yield Sampler.cache.getAsync(file.path);
     if (!image) {
         image = yield this._loadImage(file);
         yield Sampler.cache.set(file.path, image);
@@ -56,7 +83,7 @@ Sampler.prototype._getImageAt = task.async(function *(index) {
 });
 
 Sampler.prototype._loadImage = task.async(function *(file) {
-    var image = yield(lwip.openAsync(file.path, "png"));
+    var image = Bluebird.promisifyAll(yield(lwip.openAsync(file.path, "png")));
     image.path = file.path;
     return image;
 });

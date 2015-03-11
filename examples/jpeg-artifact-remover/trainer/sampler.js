@@ -41,17 +41,21 @@ Sampler.prototype.generateFFSample = task.async(function*() {
 Sampler.prototype._makeFFSample = function (data, x, y) {
     let w2 = Math.floor(this.options.width / 2);
     let h2 = Math.floor(this.options.height / 2);
-    let iBuff = new Buffer(this.options.width * this.options.height * 4);
-    let oBuff = new Buffer(4);
+    let iImgBuff = new Buffer(this.options.width * this.options.height * 4);
     for (let sourceY = y - h2, destY = 0; destY < this.options.height; sourceY++, destY++) {
         for (let sourceX = x - w2, destX = 0; destX < this.options.width; sourceX++, destX++) {
             let iCoord = (destY * this.options.width * 4) + destX * 4;
             let sourceColor = data.resultImage.getPixel(Math.abs(sourceX), Math.abs(sourceY));
             let destColor = toRGBA(sourceColor);
-            uint32.set(iBuff, iCoord, destColor);
+            uint32.set(iImgBuff, iCoord, destColor);
         }
     }
+    let oBuff = new Buffer(uint32.size);
     uint32.set(oBuff, 0, toRGBA(data.resultImage.getPixel(x, y)));
+    let iDataBuff = new Buffer(uint32 * 3);
+    uint32.set(iDataBuff, 0, data.resultQuality);
+    uint32.set(iDataBuff, 1 * uint32.size, x % 8);
+    uint32.set(iDataBuff, 2 * uint32.size, y % 8);
 };
 
 Sampler.prototype._createSampleData = task.async(function *(image, quality) {
@@ -63,6 +67,7 @@ Sampler.prototype._createSampleData = task.async(function *(image, quality) {
             width: image.width(),
             height: image.height(),
             originalImage: image,
+            resultQuality: quality,
             resultImage: yield(lwip.openAsync(yield image.toBufferAsync("jpeg", {quality: quality}), "jpeg"))
         };
     }

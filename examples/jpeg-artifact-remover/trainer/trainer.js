@@ -28,8 +28,6 @@ Trainer.prototype.begin = function () {
         else {
             console.warn("No input files found, training cannot continue.");
         }
-
-
     });
 
     f().catch(function (ex) {

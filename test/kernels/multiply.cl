@@ -1,4 +1,4 @@
-kernel void multiply(global float* values, constant float value)
+kernel void {{kernelName}}({{args.signatures}})
 {
-    values[get_global_id(0)] *= value;
+    values[get_global_id(0)] *= multiplier;
 }

@@ -17,7 +17,7 @@ var async = ncore.utils.task.async;
 var NDRange = nooocl.NDRange;
 
 var testGradientDescent = async(function* (isOnline, weightCount, useCache) {
-    var builder = new KernelBuilder("gradientDescent", "double");
+    var builder = new KernelBuilder("gradientDescent", "single");
     var gradientsLength = 15;
     var ocl = testHelpers.createOCLStuff();
     var data = [];

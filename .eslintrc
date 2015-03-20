@@ -22,7 +22,8 @@
   "rules": {
     "no-underscore-dangle": false,
     "camelcase": false,
-    "eol-last": false
+    "eol-last": false,
+    "no-unused-vars": false
   },
   "env": {
     "node": true

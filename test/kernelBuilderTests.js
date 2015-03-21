@@ -17,7 +17,7 @@ var async = ncore.utils.task.async;
 var NDRange = nooocl.NDRange;
 
 var testGradientDescent = async(function* (isOnline, weightCount, useCache) {
-    var builder = new KernelBuilder("gradientDescent", "single");
+    var builder = new KernelBuilder("ut_gradientDescent" + (isOnline ? "_on" : "_off"), "single");
     var gradientsLength = 15;
     var ocl = testHelpers.createOCLStuff();
     var data = [];
@@ -113,8 +113,8 @@ var testGradientDescent = async(function* (isOnline, weightCount, useCache) {
                         let w = float.get(weights, widx * float.size);
                         let d = float.get(deltas, widx * float.size);
 
-                        assert(testHelpers.dEq(w - d, dataItem.weightValue));
-                        assert(testHelpers.dEq((dataItem.gradientValue * rate) / iterationCount, d));
+                        assert(testHelpers.dEq(w - d, dataItem.weightValue), `${widx}:  ${w - d} !== ${dataItem.weightValue}`);
+                        assert(testHelpers.dEq((dataItem.gradientValue * rate) / iterationCount, d), `${widx}:  ${(dataItem.gradientValue * rate) / iterationCount} !== ${d}`);
                     }
                 }
                 finally {

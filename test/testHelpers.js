@@ -14,7 +14,7 @@ var testHelpers = {
         var platforms = host.getPlatforms();
         assert(_.isArray(platforms));
         assert.notEqual(platforms.length, 0);
-        var devices = platforms[0].allDevices();
+        var devices = platforms[0].cpuDevices();
         assert(_.isArray(devices));
         assert.notEqual(devices.length, 0);
         var device = devices[0];

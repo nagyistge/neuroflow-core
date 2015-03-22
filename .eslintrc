@@ -23,7 +23,8 @@
     "no-underscore-dangle": false,
     "camelcase": false,
     "eol-last": false,
-    "no-unused-vars": false
+    "no-unused-vars": false,
+    "quotes": false
   },
   "env": {
     "node": true

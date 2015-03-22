@@ -1,4 +1,6 @@
 kernel void {{kernelName}}({{args.signatures}})
 {
-    values[get_global_id(0)] *= multiplier;
+    {{forEachGlobalBegin('size')}}
+    values[idx] *= multiplier;
+    {{forEachGlobalEnd('size')}}
 }

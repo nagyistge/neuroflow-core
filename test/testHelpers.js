@@ -1,40 +1,35 @@
-'use strict';
+"use strict";
 
-var nooocl = require('nooocl');
-var CLContext = nooocl.CLContext;
-var CLHost = nooocl.CLHost;
-var CLCommandQueue = nooocl.CLCommandQueue;
-var assert = require('assert');
-var _ = require('lodash');
+let nooocl = require("nooocl");
+let CLContext = nooocl.CLContext;
+let CLHost = nooocl.CLHost;
+let CLCommandQueue = nooocl.CLCommandQueue;
+let assert = require("assert");
+let _ = require("lodash");
+let ncore = require("../");
+let async = ncore.utils.task.async;
+let NContext = ncore.NContext;
 
-var testHelpers = {
-    createOCLStuff: function () {
-        var host = CLHost.createV11();
-        assert(_.isObject(host));
-        var platforms = host.getPlatforms();
-        assert(_.isArray(platforms));
-        assert.notEqual(platforms.length, 0);
-        var devices = platforms[0].cpuDevices();
-        assert(_.isArray(devices));
-        assert.notEqual(devices.length, 0);
-        var device = devices[0];
-        var context = new CLContext(device);
-        return {
-            host: host,
-            device: device,
-            context: context,
-            queue: new CLCommandQueue(context, device)
-        };
-    },
+let testHelpers = {
+    doTest: async(function*(testFunc) {
+        yield testHelpers._doTest("cpu", "single", testFunc);
+        yield testHelpers._doTest("cpu", "double", testFunc);
+        yield testHelpers._doTest("gpu", "single", testFunc);
+        yield testHelpers._doTest("gpu", "double", testFunc);
+    }),
+    _doTest: async(function*(deviceHint, precision, testFunc) {
+        let nContext = new NContext(deviceHint, precision, { useFileCache: true });
+        yield testFunc(nContext);
+    }),
     createFilledBuffer: function (type, size, value) {
-        var i, buff = new Buffer(size * type.size);
-        for (i = 0; i < size; i++) {
+        let buff = new Buffer(size * type.size);
+        for (let i = 0; i < size; i++) {
             type.set(buff, i * type.size, value);
         }
         return buff;
     },
     createZeroedBuffer: function (type, size) {
-        var buff = new Buffer(size * type.size);
+        let buff = new Buffer(size * type.size);
         buff.fill(0);
         return buff;
     },
